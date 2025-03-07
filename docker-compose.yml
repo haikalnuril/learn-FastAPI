@@ -1,0 +1,6 @@
+services:
+  learn-fastapi:
+    container_name: learn_fastapi
+    build: .
+    ports:
+      - "6711:8000"
