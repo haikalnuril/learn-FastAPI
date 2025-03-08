@@ -1,19 +1,18 @@
-from typing import Union
+from fastapi import FastAPI
+from routers import users
+from models import Base
+from db_config import engine
 
-from fastapi import FastAPI, Depends
+def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
 
-from db_config import get_db
-from models import Users
-from sqlalchemy.orm import Session
 
-app = FastAPI()
-
+app = FastAPI(lifespan=lifespan)
+app.include_router(users.router)
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/users")
-async def get_all_users(db: Session=Depends(get_db)):
-    users = db.query(Users).all()
-    return users
+
