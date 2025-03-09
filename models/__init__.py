@@ -1,4 +1,5 @@
 from .user_model import (
     CreateUserRequest,
-    UserResponse
+    UserResponse,
+    toUserResponse
 )

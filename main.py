@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from routers import users
-from models import Base
+from db_config import Base
 from db_config import engine
 
 def lifespan(app: FastAPI):
