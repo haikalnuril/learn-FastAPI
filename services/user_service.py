@@ -86,3 +86,19 @@ class UserService :
         db.commit()
         db.refresh(db_user)
         return toUserResponse.model_validate(db_user)
+    
+    @staticmethod
+    async def delete(user_id: int, db: Session) -> Users:
+        
+        db_user = await UserService.getUserById(user_id, db)
+        
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not exist"
+            )
+            
+        db.delete(db_user)
+        db.commit()
+        
+        return True

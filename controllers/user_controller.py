@@ -39,3 +39,21 @@ class UserController :
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e)
             )
+            
+    @staticmethod
+    async def delete(user_id: int, db: Session= Depends(get_db)) -> Dict[str, Any]:
+        try:
+            users = await UserService.delete(user_id=user_id, db= db)
+            
+            if not users:
+                return users
+            return {
+                "message": "User deleted successfully"
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(e)
+            )

@@ -23,3 +23,7 @@ async def create_user(user: CreateUserRequest, db: Session=Depends(get_db)):
 @router.put("/{user_id}", status_code=status.HTTP_200_OK)
 async def update_user(user_id: int, user: UpdateUserRequest, db: Session=Depends(get_db)):
     return await UserController.update(user_id=user_id, user=user, db=db)
+
+@router.delete("/{user_id}", status_code=status.HTTP_200_OK)
+async def delete_user(user_id: int, db: Session= Depends(get_db)):
+    return await UserController.delete(user_id=user_id, db=db)
