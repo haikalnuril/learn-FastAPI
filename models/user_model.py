@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -17,6 +18,19 @@ class UserResponse(BaseModel) :
 class CreateUserRequest(UserResponse) :
     password: str = Field(
         ..., 
+        min_length=8, 
+        description="User's password (will be hashed)"
+    )
+
+class UpdateUserRequest(BaseModel):
+    username: Optional[str] = Field(
+        None,
+        min_length=3,
+        max_length=100,
+        description="User's username"
+    )
+    password: Optional[str] = Field(
+        None,
         min_length=8, 
         description="User's password (will be hashed)"
     )

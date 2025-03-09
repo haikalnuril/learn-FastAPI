@@ -1,6 +1,8 @@
+from typing import Optional
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from models.user_model import CreateUserRequest
+from models.user_model import CreateUserRequest, UpdateUserRequest, toUserResponse
 from passlib.context import CryptContext
 from schemas import Users
 
@@ -8,6 +10,36 @@ from schemas import Users
 pass_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class UserService :
+    @staticmethod
+    async def getUserById(user_id: int, db: Session)->Optional[Users]:
+        try:
+            return db.query(Users).filter(Users.id == user_id).first()
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to fetch user"
+            )
+            
+    @staticmethod
+    async def getUserByEmail(email: str, db: Session)-> Optional[Users]:
+        try:
+            return db.query(Users).filter(Users.email == email).first()
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to fetch user by email"
+            )
+            
+    @staticmethod
+    async def getUserByUsername(username:str, db:Session)-> Optional[Users]:
+        try:
+            return db.query(Users).filter(Users.username == username).first()
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to fetch user by username"
+            )
+    
     @staticmethod
     async def create(request: CreateUserRequest, db: Session) -> Users:
         request.password = pass_context.hash(request.password)
@@ -22,4 +54,35 @@ class UserService :
         db.commit()
         db.refresh(db_user)
         
-        return db_user
+        return toUserResponse.model_validate(db_user)
+    
+    @staticmethod
+    async def update(user_id: int, request: UpdateUserRequest, db: Session) -> Users:
+        
+        db_user = await UserService.getUserById(user_id, db)
+        
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not exist"
+            )
+        
+        update_data = request.model_dump(exclude_unset=True)
+        
+        if "username" in update_data and update_data["username"] != db_user.username:
+            exist_user = await UserService.getUserByUsername(update_data["username"], db)
+            if exist_user:
+                raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Username already taken by another user"
+                    )
+        
+        if "password" in update_data:
+            update_data["password"] = pass_context.hash(update_data["password"])
+            
+        for key, value in update_data.items():
+            setattr(db_user, key, value)
+            
+        db.commit()
+        db.refresh(db_user)
+        return toUserResponse.model_validate(db_user)
