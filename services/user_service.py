@@ -2,9 +2,10 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from models.user_model import CreateUserRequest, UpdateUserRequest, toUserResponse
+from models.user_model import CreateUserRequest, LoginUserRequest, UpdateUserRequest, toLoginUserResponse, toUserResponse
 from passlib.context import CryptContext
 from schemas import Users
+from utils.JWT import JWT_token
 
 
 pass_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -55,6 +56,42 @@ class UserService :
         db.refresh(db_user)
         
         return toUserResponse.model_validate(db_user)
+    
+    @staticmethod
+    async def login(request: LoginUserRequest, db: Session) -> Users:
+        db_user = await UserService.getUserByEmail(request.email, db)
+        
+        if not db_user:
+            raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email or Password is wrong!"
+        )
+            
+        verify_password = pass_context.verify(request.password, db_user.password)
+        
+        if not verify_password:
+            raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email or Password is wrong!"
+        )
+            
+        token = JWT_token(
+            data={
+                "id": db_user.id,
+                "username": db_user.username,
+                "email":db_user.email
+            }
+        )
+        
+        user_response = toLoginUserResponse(
+            id=db_user.id,
+            username=db_user.username,
+            email=db_user.email,
+            created_at=db_user.created_at,
+            updated_at=db_user.updated_at,
+            token=token
+        )
+        return user_response
     
     @staticmethod
     async def update(user_id: int, request: UpdateUserRequest, db: Session) -> Users:

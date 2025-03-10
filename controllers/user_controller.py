@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from db_config import get_db
-from models.user_model import CreateUserRequest, UpdateUserRequest
+from models.user_model import CreateUserRequest, LoginUserRequest, UpdateUserRequest
 from services.user_service import UserService
 
 
@@ -14,6 +14,22 @@ class UserController :
             users = await UserService.create(request=user, db=db)
             return {
                 "message" : "User Created Successfully",
+                "data": users
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(e)
+            )
+            
+    @staticmethod
+    async def login(request: LoginUserRequest, db: Session = Depends(get_db))-> Dict[str, Any]:
+        try:
+            users = await UserService.login(request=request, db=db)
+            return {
+                "message": "Login Successfully",
                 "data": users
             }
         except HTTPException:
